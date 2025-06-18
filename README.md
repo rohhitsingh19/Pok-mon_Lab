@@ -1,4 +1,4 @@
-# Pokémon Lab 
+# Pokémon Research Lab 
 
 A sleek, interactive Pokédex web app that brings Pokémon data to life in a modern, lab-themed interface.
 
