@@ -9,7 +9,7 @@ A sleek, interactive Pokédex web app that brings Pokémon data to life in a mod
 - **Responsive Design**: Enjoy seamless browsing on desktop and mobile devices.
 - **Detailed View**: Click a Pokémon to see high-res artwork, detailed stats, abilities, and descriptions.
 
-## 🛠Built With
+## Built With
 
 - **Frontend**: React (or Next.js / Vue.js) & modern CSS (Tailwind CSS / Styled‑Components)
 - **Data Source**: PokéAPI or other Pokémon database
