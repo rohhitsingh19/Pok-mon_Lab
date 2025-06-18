@@ -11,8 +11,8 @@ A sleek, interactive Pokédex web app that brings Pokémon data to life in a mod
 
 ## Built With
 
-- **Frontend**: React (or Next.js / Vue.js) & modern CSS (Tailwind CSS / Styled‑Components)
-- **Data Source**: PokéAPI or other Pokémon database
+- **Frontend**: React (Next.js) & modern CSS (Tailwind CSS)
+- **Data Source**: PokéAPI database
 - **Deployment**: Vercel (with automated CI/CD)
 
 ## Getting Started
