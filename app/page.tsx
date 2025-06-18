@@ -1,103 +1,205 @@
-import Image from "next/image";
+"use client";
+import { useState} from 'react';
+import { SearchBar } from './components/SearchBar';
+import { PokemonCard } from './components/PokemonCard';
+import { PokemonDetails } from './components/PokemonDetails';
+import { LoadingSpinner } from './components/LoadingSpinner';
+import { TypeFilter } from './components/TypeFilter';
+import { Pokemon } from './types/pokemon';
+import { pokemonApi } from './services/pokemonApi';
+import { usePokemonData } from './hooks/usePokemonData';
+import { Database, Beaker, Search } from 'lucide-react';
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+function App() {
+  const { pokemonData, loading, error, loadMorePokemon, totalCount } = usePokemonData();
+  const [searchResults, setSearchResults] = useState<Pokemon[]>([]);
+  const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [displayedCount, setDisplayedCount] = useState(20);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleSearch = async (query: string) => {
+    setIsSearching(true);
+    setSearchQuery(query);
+    
+    try {
+      const results = await pokemonApi.searchPokemon(query);
+      setSearchResults(results);
+    } catch (err) {
+      console.error('Search failed:', err);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleTypeToggle = (type: string) => {
+    setSelectedTypes(prev => 
+      prev.includes(type) 
+        ? prev.filter(t => t !== type)
+        : [...prev, type]
+    );
+  };
+
+  const handleClearFilters = () => {
+    setSelectedTypes([]);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const loadMore = () => {
+    if (displayedCount < totalCount) {
+      const newCount = Math.min(displayedCount + 20, totalCount);
+      loadMorePokemon(displayedCount, 20);
+      setDisplayedCount(newCount);
+    }
+  };
+
+  const getFilteredPokemon = () => {
+    const dataToFilter = searchQuery ? searchResults : pokemonData;
+    
+    if (selectedTypes.length === 0) {
+      return dataToFilter;
+    }
+    
+    return dataToFilter.filter(pokemon =>
+      pokemon.types.some(type => selectedTypes.includes(type.type.name))
+    );
+  };
+
+  const filteredPokemon = getFilteredPokemon();
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-xl mb-4">⚠️ Research Station Offline</div>
+          <p className="text-gray-600">{error}</p>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="bg-blue-600 p-2 rounded-xl">
+                <Database className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Pokémon Research Lab</h1>
+                <p className="text-gray-600">Advanced Species Analysis & Database</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4 text-sm text-gray-500">
+              <div className="flex items-center gap-1">
+                <Beaker className="h-4 w-4" />
+                <span>{filteredPokemon.length} Specimens</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Search Section */}
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-6">
+            <SearchBar onSearch={handleSearch} isLoading={isSearching} />
+          </div>
+          
+          {searchQuery && (
+            <div className="mb-4">
+              <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm">
+                <Search className="h-4 w-4" />
+                Search results for: <strong>{searchQuery}</strong>
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSearchResults([]);
+                  }}
+                  className="ml-2 text-blue-600 hover:text-blue-800"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Type Filter */}
+        <TypeFilter
+          selectedTypes={selectedTypes}
+          onTypeToggle={handleTypeToggle}
+          onClear={handleClearFilters}
+        />
+
+        {/* Results Section */}
+        {loading && pokemonData.length === 0 ? (
+          <LoadingSpinner />
+        ) : (
+          <>
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold text-gray-800">
+                {searchQuery ? 'Search Results' : 'Research Database'}
+                <span className="ml-2 text-sm font-normal text-gray-500">
+                  ({filteredPokemon.length} found)
+                </span>
+              </h2>
+            </div>
+
+            {filteredPokemon.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-gray-400 text-lg mb-2">🔍 No specimens found</div>
+                <p className="text-gray-500">
+                  {searchQuery || selectedTypes.length > 0
+                    ? 'Try adjusting your search criteria or filters'
+                    : 'Loading research data...'}
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+                  {filteredPokemon.map((pokemon) => (
+                    <PokemonCard
+                      key={pokemon.id}
+                      pokemon={pokemon}
+                      onClick={() => setSelectedPokemon(pokemon)}
+                    />
+                  ))}
+                </div>
+
+                {/* Load More Button */}
+                {!searchQuery && displayedCount < totalCount && (
+                  <div className="text-center">
+                    <button
+                      onClick={loadMore}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-medium transition-colors"
+                    >
+                      Load More Research Data ({displayedCount}/{totalCount})
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+      {/* Pokemon Details Modal */}
+      {selectedPokemon && (
+        <PokemonDetails
+          pokemon={selectedPokemon}
+          onClose={() => setSelectedPokemon(null)}
+        />
+      )}
     </div>
   );
 }
+
+export default App;
